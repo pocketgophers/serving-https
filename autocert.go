@@ -10,8 +10,20 @@ import (
 func main() {
 	http.HandleFunc("/", hello)
 
-	l := autocert.NewListener("example.com")
-	log.Fatal(http.Serve(l, nil))
+	m := &autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("example.com"),
+		Cache:      autocert.DirCache("golang-autocert"),
+	}
+
+	// HTTP Server
+	go func() {
+		log.Fatal(http.ListenAndServe(":http",
+			m.HTTPHandler(nil)))
+	}()
+
+	// HTTPS Server
+	log.Fatal(http.Serve(m.Listener(), nil))
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
